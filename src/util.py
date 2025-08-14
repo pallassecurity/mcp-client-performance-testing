@@ -1,5 +1,7 @@
+import functools
 import multiprocessing
 import time
+import types
 from contextlib import contextmanager
 from typing import Callable
 
@@ -24,3 +26,30 @@ def with_process(target: Callable, args: tuple | None = None, startup_sleep: int
             if process.is_alive():
                 process.kill()
                 process.join()
+
+
+def time_method(method):
+    @functools.wraps(method)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = method(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"{method.__qualname__} took {end - start:.6f} seconds")
+        return result
+    return wrapper
+
+
+def profile_methods(cls):
+    for name, attr in cls.__dict__.items():
+        if isinstance(attr, types.FunctionType):
+            def make_wrapper(func):
+                def wrapper(*args, **kwargs):
+                    start = time.perf_counter()
+                    result = func(*args, **kwargs)
+                    end = time.perf_counter()
+                    elapsed = end - start
+                    print(f"{cls.__name__}.{func.__name__} took {elapsed:.6f} seconds")
+                    return result
+                return wrapper
+            setattr(cls, name, make_wrapper(attr))
+    return cls

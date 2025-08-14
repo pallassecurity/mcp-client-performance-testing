@@ -1,4 +1,5 @@
 import asyncio
+import os
 import time
 from importlib.metadata import version
 from typing import Coroutine, Any, Callable
@@ -175,7 +176,7 @@ async def main() -> None:
                     await repeat_tests(lambda: test_call_tool(notion_session, "notion-get-self", {}))
                     print()
 
-    github_pat = ""
+    github_pat = os.environ["GITHUB_PAT"]
 
     print("Running GitHub client connection tests (PAT)...")
     await repeat_tests(lambda: test_github_connection(github_pat))

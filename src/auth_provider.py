@@ -5,11 +5,9 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
-from mcp.client.auth import OAuthClientProvider
+from mcp.client.auth import OAuthClientProvider, TokenStorage
 from mcp.shared.auth import OAuthClientMetadata
 from pydantic import AnyUrl
-
-from token_storage import InMemoryTokenStorage
 
 
 class FastAPICallbackServer:
@@ -117,7 +115,7 @@ async def callback_server(port: int = 3000):
 
 
 @asynccontextmanager
-async def oauth_provider(server_url: str, callback_server_instance: FastAPICallbackServer):
+async def oauth_provider(server_url: str, callback_server_instance: FastAPICallbackServer, token_storage: TokenStorage):
     """Context manager for OAuth provider using an existing callback server."""
 
     # Reset the server for this OAuth flow
@@ -127,7 +125,6 @@ async def oauth_provider(server_url: str, callback_server_instance: FastAPICallb
         if print_url:
             print(f"Visit: {auth_url}")
         webbrowser.open(auth_url)
-        print("Browser opened with auth URL")
 
     async def callback_handler() -> tuple[str, str | None]:
         return await callback_server_instance.wait_for_callback()
@@ -141,7 +138,7 @@ async def oauth_provider(server_url: str, callback_server_instance: FastAPICallb
             response_types=["code"],
             scope="user"
         ),
-        storage=InMemoryTokenStorage(),
+        storage=token_storage,
         redirect_handler=redirect_handler,
         callback_handler=callback_handler,
     )
